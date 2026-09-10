@@ -9,28 +9,49 @@ import java.util.Map;
 public class GestionnaireService {
 
     public void creerCompte(Client client, Compte compte) {
-        if (client != null && compte != null) {
-            client.ajouterCompte(compte);
-            System.out.println("Compte N°" + (int)compte.getNumeroCompte() + " attribué avec succès.");
+        if (client == null || compte == null) {
+            throw new IllegalArgumentException("Paramètres invalides.");
         }
+
+        double num = compte.getNumeroCompte();
+        if (client.getComptes().containsKey(num)) {
+            System.err.println("Échec : Le compte N°" + (int)num + " appartient déjà à ce client.");
+            return;
+        }
+
+        client.ajouterCompte(compte);
+        System.out.println("Compte N°" + (int)num + " attribué avec succès.");
     }
 
     public void cloturerCompte(Client client, double numeroCompte) {
-        if (client != null && client.getComptes().containsKey(numeroCompte)) {
-            client.getComptes().remove(numeroCompte);
-            System.out.println("Compte N°" + (int)numeroCompte + " clôturé.");
-        } else {
-            System.out.println("Échec : Compte introuvable.");
+        if (client == null) return;
+
+        Compte compte = client.getComptes().get(numeroCompte);
+        if (compte == null) {
+            System.err.println("Échec : Compte introuvable.");
+            return;
         }
+
+        if (compte.getSolde() < 0) {
+            System.err.println("Échec : Impossible de clôturer un compte à découvert.");
+            return;
+        }
+
+        client.getComptes().remove(numeroCompte);
+        System.out.println("Compte N°" + (int)numeroCompte + " clôturé avec succès.");
     }
 
     public void modifierInfoClient(Client client, String nom, String prenom, String email) {
-        if (client != null) {
-            client.setNom(nom);
-            client.setPrenom(prenom);
-            client.setEmail(email);
-            System.out.println("Informations mises à jour pour le client ID: " + client.getIdClient());
+        if (client == null) return;
+        if (email == null || !email.contains("@")) {
+            System.err.println("Échec : Adresse email invalide.");
+            return;
         }
+
+        client.setNom(nom);
+        client.setPrenom(prenom);
+        client.setEmail(email);
+        System.out.println("Informations mises à jour pour le client ID: " + client.getIdClient());
     }
 
     public void consulterReleveClient(Client client) {

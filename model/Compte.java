@@ -1,6 +1,4 @@
 package model;
-import Exceptions.MontantInvalideException;
-import Exceptions.SoldeInsuffisantException;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -20,23 +18,17 @@ public abstract class Compte {
     public float consulterSolde() {
         return this.solde;
     }
-
-    public void depotArgent(float montant) throws MontantInvalideException {
-        if (montant <= 0) {
-            throw new MontantInvalideException("Le montant du dépôt doit être strictement positif.");
-        }
+    public void depotArgent(float montant) {
         this.solde += montant;
     }
 
-    public void retraitArgent(float montant) throws MontantInvalideException, SoldeInsuffisantException {
-        if (montant <= 0) {
-            throw new MontantInvalideException("Le montant du retrait doit être strictement positif.");
-        }
-        if (this.solde < montant) {
-            throw new SoldeInsuffisantException("Solde insuffisant pour effectuer un retrait de " + montant + " MAD. Solde actuel : " + this.solde);
-        }
+    public void retraitArgent(float montant) {
         this.solde -= montant;
     }
+
+    // public abstract void depotArgent(float montant);
+
+    // public abstract void retraitArgent(float montant);
 
     // Getters et Setters
     public double getNumeroCompte() {
@@ -45,6 +37,9 @@ public abstract class Compte {
 
     public float getSolde() {
         return solde;
+    }
+    public void setSolde(float solde){
+        this.solde = solde;
     }
 
     public Set<Transaction> getHistoriqueTransactions() {
