@@ -1,4 +1,4 @@
-package model;
+/* package model;
 import java.util.Map;
 
 
@@ -84,4 +84,16 @@ public class Gestionner extends Person {
         }
         System.out.println("==================================================");
     }
+} */
+package model;
+
+public class Gestionner extends Person {
+    private int idGestionner;
+
+    public Gestionner(String nom, String prenom, String email, int idGestionner) {
+        super(nom, prenom, email);
+        this.idGestionner = idGestionner;
+    }
+
+    public int getIdGestionner() { return idGestionner; }
 }
