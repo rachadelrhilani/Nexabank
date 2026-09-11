@@ -1,78 +1,107 @@
 
+
 import Exceptions.JournalisationException;
 import Exceptions.MontantInvalideException;
 import Exceptions.SoldeInsuffisantException;
 import model.*;
-import services.ClientService;
-import services.GestionnaireService;
+import services.*;
 
 import java.util.Scanner;
 
 class Main {
     private static final Scanner scanner = new Scanner(System.in);
+    private static final AuthService authService = new AuthService();
     private static final ClientService clientService = new ClientService();
     private static final GestionnaireService gestionnaireService = new GestionnaireService();
 
-    private static final Client client = new Client("Benali", "Youssef", "youssef.benali@email.ma", 101);
     private static int sequenceIdTransaction = 1;
 
     public static void main(String[] args) {
-        // Pré-chargement des comptes de démonstration (Compte Courant & Compte Épargne)
-        gestionnaireService.creerCompte(client, new Courant(1001.0, 5000.0f, 1000.0f));
-        gestionnaireService.creerCompte(client, new Epargne(1002.0, 2000.0f, 2.5f));
+        // Pré-chargement des comptes et des utilisateurs
+        Client clientDemo = new Client("Benali", "Youssef", "client@email.com", "1234", 101);
+        Gestionner gestionnaireDemo = new Gestionner("El Amrani", "Karim", "admin@email.com", "admin123", 1);
 
-        int choix = -1;
-        while (choix != 0) {
+        gestionnaireService.creerCompte(clientDemo, new Courant(1001.0, 5000.0f, 1000.0f));
+        gestionnaireService.creerCompte(clientDemo, new Epargne(1002.0, 2000.0f, 2.5f));
+
+        authService.inscrireUtilisateur(clientDemo);
+        authService.inscrireUtilisateur(gestionnaireDemo);
+
+        boolean applicationActive = true;
+
+        while (applicationActive) {
             System.out.println("\n==========================================");
-            System.out.println("       SYSTÈME DE GESTION BANCAIRE        ");
+            System.out.println("       CONNEXION SYSTÈME BANCAIRE         ");
             System.out.println("==========================================");
-            System.out.println("1. Espace Client");
-            System.out.println("2. Espace Gestionnaire");
-            System.out.println("0. Quitter l'application");
-            System.out.print("Choisissez une option : ");
 
-            choix = lireEntier();
+            Person utilisateurConnecte = null;
 
-            switch (choix) {
-                case 1 -> menuClient();
-                case 2 -> menuGestionnaire();
-                case 0 -> System.out.println("Fermeture de l'application. Au revoir !");
-                default -> System.out.println("Option invalide. Veuillez réessayer.");
+            // Boucle d'authentification
+            while (utilisateurConnecte == null) {
+                System.out.print("Email : ");
+                String email = scanner.nextLine();
+                System.out.print("Mot de passe : ");
+                String mdp = scanner.nextLine();
+
+                utilisateurConnecte = authService.authentifier(email, mdp);
+
+                if (utilisateurConnecte == null) {
+                    System.out.println("Identifiants incorrects. Veuillez réessayer.\n");
+                }
+            }
+
+            // Message de bienvenue polymorphe
+            utilisateurConnecte.login();
+
+            // REDIRECTION AUTOMATIQUE SELON LE RÔLE
+            if ("CLIENT".equals(utilisateurConnecte.getRole())) {
+                menuClient((Client) utilisateurConnecte);
+            } else if ("GESTIONNAIRE".equals(utilisateurConnecte.getRole())) {
+                menuGestionnaire();
+            }
+
+            System.out.println("\n1. Se connecter avec un autre compte");
+            System.out.println("0. Quitter le système");
+            System.out.print("Choix : ");
+            if (lireEntier() == 0) {
+                applicationActive = false;
             }
         }
+
+        System.out.println("Fermeture de l'application. Au revoir !");
         scanner.close();
     }
 
     // ==========================================
     // ESPACE CLIENT
     // ==========================================
-    private static void menuClient() {
+    private static void menuClient(Client client) {
         int choix = -1;
         while (choix != 0) {
-            System.out.println("\n--- ESPACE CLIENT ---");
+            System.out.println("\n--- BIENVENUE DANS VOTRE ESPACE CLIENT ---");
             System.out.println("1. Consulter le solde de mes comptes");
             System.out.println("2. Effectuer un dépôt");
             System.out.println("3. Effectuer un retrait");
             System.out.println("4. Réaliser un virement entre comptes");
-            System.out.println("5. Consulter mes relevés bancaires");
-            System.out.println("0. Retour au menu principal");
+            System.out.println("5. Consulter mon relevé bancaire");
+            System.out.println("0. Déconnexion");
             System.out.print("Option : ");
 
             choix = lireEntier();
 
             switch (choix) {
-                case 1 -> afficherSoldesClient();
-                case 2 -> faireDepot();
-                case 3 -> faireRetrait();
-                case 4 -> faireVirement();
+                case 1 -> afficherSoldes(client);
+                case 2 -> faireDepot(client);
+                case 3 -> faireRetrait(client);
+                case 4 -> faireVirement(client);
                 case 5 -> gestionnaireService.consulterReleveClient(client);
-                case 0 -> System.out.println("Retour au menu principal...");
+                case 0 -> System.out.println("Déconnexion en cours...");
                 default -> System.out.println("Option invalide.");
             }
         }
     }
 
-    private static void afficherSoldesClient() {
+    private static void afficherSoldes(Client client) {
         System.out.println("\n--- VOS COMPTES ---");
         if (client.getComptes().isEmpty()) {
             System.out.println("Vous ne possédez aucun compte.");
@@ -84,8 +113,8 @@ class Main {
         }
     }
 
-    private static void faireDepot() {
-        Compte compte = selectionnerCompte();
+    private static void faireDepot(Client client) {
+        Compte compte = selectionnerCompte(client);
         if (compte == null) return;
 
         System.out.print("Saisissez le montant à déposer : ");
@@ -95,12 +124,12 @@ class Main {
             clientService.effectuerDepot(compte, montant, sequenceIdTransaction++);
             System.out.println("Dépôt réussi. Nouveau solde : " + compte.getSolde() + " MAD");
         } catch (MontantInvalideException | JournalisationException e) {
-            System.out.println("Erreur Dépôt : " + e.getMessage());
+            System.out.println("Erreur : " + e.getMessage());
         }
     }
 
-    private static void faireRetrait() {
-        Compte compte = selectionnerCompte();
+    private static void faireRetrait(Client client) {
+        Compte compte = selectionnerCompte(client);
         if (compte == null) return;
 
         System.out.print("Saisissez le montant à retirer : ");
@@ -110,17 +139,17 @@ class Main {
             clientService.effectuerRetrait(compte, montant, sequenceIdTransaction++);
             System.out.println("Retrait réussi. Nouveau solde : " + compte.getSolde() + " MAD");
         } catch (MontantInvalideException | SoldeInsuffisantException | JournalisationException e) {
-            System.out.println("Erreur Retrait : " + e.getMessage());
+            System.out.println("Erreur : " + e.getMessage());
         }
     }
 
-    private static void faireVirement() {
-        System.out.println("\n--- SÉLECTION DU COMPTE SOURCE ---");
-        Compte source = selectionnerCompte();
+    private static void faireVirement(Client client) {
+        System.out.println("\n--- COMPTE SOURCE ---");
+        Compte source = selectionnerCompte(client);
         if (source == null) return;
 
-        System.out.println("\n--- SÉLECTION DU COMPTE DESTINATION ---");
-        Compte destination = selectionnerCompte();
+        System.out.println("\n--- COMPTE DESTINATION ---");
+        Compte destination = selectionnerCompte(client);
         if (destination == null) return;
 
         System.out.print("Saisissez le montant du virement : ");
@@ -130,7 +159,7 @@ class Main {
             clientService.effectuerVirement(source, destination, montant, sequenceIdTransaction++);
             System.out.println("Virement de " + montant + " MAD effectué avec succès !");
         } catch (MontantInvalideException | SoldeInsuffisantException | JournalisationException e) {
-            System.out.println("Erreur Virement : " + e.getMessage());
+            System.out.println("Erreur : " + e.getMessage());
         }
     }
 
@@ -141,27 +170,30 @@ class Main {
         int choix = -1;
         while (choix != 0) {
             System.out.println("\n--- ESPACE GESTIONNAIRE ---");
-            System.out.println("1. Créer un nouveau compte pour le client");
+            System.out.println("1. Créer un compte pour un client");
             System.out.println("2. Clôturer un compte client");
-            System.out.println("3. Modifier les informations du client");
-            System.out.println("4. Consulter le relevé complet du client");
-            System.out.println("0. Retour au menu principal");
+            System.out.println("3. Modifier les informations d'un client");
+            System.out.println("4. Consulter le relevé d'un client");
+            System.out.println("0. Déconnexion");
             System.out.print("Option : ");
 
             choix = lireEntier();
 
             switch (choix) {
-                case 1 -> ajouterCompte();
-                case 2 -> cloturerCompte();
-                case 3 -> modifierInfosClient();
-                case 4 -> gestionnaireService.consulterReleveClient(client);
-                case 0 -> System.out.println("Retour au menu principal...");
+                case 1 -> ajouterCompteGestionnaire();
+                case 2 -> cloturerCompteGestionnaire();
+                case 3 -> modifierInfoGestionnaire();
+                case 4 -> consulterReleveGestionnaire();
+                case 0 -> System.out.println("Déconnexion en cours...");
                 default -> System.out.println("Option invalide.");
             }
         }
     }
 
-    private static void ajouterCompte() {
+    private static void ajouterCompteGestionnaire() {
+        Client target = chercherClientParEmail();
+        if (target == null) return;
+
         System.out.print("Numéro du nouveau compte : ");
         double num = scanner.nextDouble();
         System.out.print("Solde initial : ");
@@ -174,17 +206,22 @@ class Main {
                 ? new Epargne(num, solde, 2.5f) 
                 : new Courant(num, solde, 500.0f);
 
-        gestionnaireService.creerCompte(client, nouveauCompte);
+        gestionnaireService.creerCompte(target, nouveauCompte);
     }
 
-    private static void cloturerCompte() {
+    private static void cloturerCompteGestionnaire() {
+        Client target = chercherClientParEmail();
+        if (target == null) return;
+
         System.out.print("Numéro du compte à clôturer : ");
         double num = scanner.nextDouble();
-        gestionnaireService.cloturerCompte(client, num);
+        gestionnaireService.cloturerCompte(target, num);
     }
 
-    private static void modifierInfosClient() {
-        scanner.nextLine();
+    private static void modifierInfoGestionnaire() {
+        Client target = chercherClientParEmail();
+        if (target == null) return;
+
         System.out.print("Nouveau nom : ");
         String nom = scanner.nextLine();
         System.out.print("Nouveau prénom : ");
@@ -192,14 +229,33 @@ class Main {
         System.out.print("Nouvel email : ");
         String email = scanner.nextLine();
 
-        gestionnaireService.modifierInfoClient(client, nom, prenom, email);
+        gestionnaireService.modifierInfoClient(target, nom, prenom, email);
+    }
+
+    private static void consulterReleveGestionnaire() {
+        Client target = chercherClientParEmail();
+        if (target != null) {
+            gestionnaireService.consulterReleveClient(target);
+        }
+    }
+
+    private static Client chercherClientParEmail() {
+        System.out.print("Saisissez l'email du client ciblé : ");
+        String email = scanner.nextLine();
+        Person user = authService.trouverParEmail(email);
+
+        if (user instanceof Client client) {
+            return client;
+        }
+        System.out.println("Erreur : Aucun client trouvé avec l'email " + email);
+        return null;
     }
 
     // ==========================================
     // UTILITAIRES
     // ==========================================
-    private static Compte selectionnerCompte() {
-        afficherSoldesClient();
+    private static Compte selectionnerCompte(Client client) {
+        afficherSoldes(client);
         if (client.getComptes().isEmpty()) return null;
 
         System.out.print("Entrez le numéro du compte à cibler : ");
@@ -217,7 +273,9 @@ class Main {
             System.out.print("Saisie invalide. Entrez un nombre entier : ");
             scanner.next();
         }
-        return scanner.nextInt();
+        int val = scanner.nextInt();
+        scanner.nextLine(); // Consomme le retour à la ligne
+        return val;
     }
 
     private static float lireFloat() {
@@ -225,6 +283,8 @@ class Main {
             System.out.print("Saisie invalide. Entrez un nombre décimal : ");
             scanner.next();
         }
-        return scanner.nextFloat();
+        float val = scanner.nextFloat();
+        scanner.nextLine(); // Consomme le retour à la ligne
+        return val;
     }
 }
