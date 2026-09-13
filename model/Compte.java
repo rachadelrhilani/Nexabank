@@ -26,11 +26,6 @@ public abstract class Compte {
         this.solde -= montant;
     }
 
-    // public abstract void depotArgent(float montant);
-
-    // public abstract void retraitArgent(float montant);
-
-    // Getters et Setters
     public double getNumeroCompte() {
         return numeroCompte;
     }

@@ -31,7 +31,7 @@ public class GestionnaireService {
             System.err.println("Échec : Compte introuvable.");
             return;
         }
-
+        // si le client avait un crédit
         if (compte.getSolde() < 0) {
             System.err.println("Échec : Impossible de clôturer un compte à découvert.");
             return;

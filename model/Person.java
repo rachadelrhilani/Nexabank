@@ -13,7 +13,7 @@ public abstract class Person {
         this.motDePasse = motDePasse;
     }
 
-    // Méthode polymorphe pour identifier le rôle sans "instanceof"
+    // method pour connaitre le role
     public abstract String getRole();
 
     public boolean verifierMotDePasse(String mdp) {
@@ -24,7 +24,7 @@ public abstract class Person {
         System.out.println("Connexion réussie ! Bienvenue " + prenom + " " + nom + " [" + getRole() + "]");
     }
 
-    // Getters et Setters
+    // getters et setters
     public String getNom() { return nom; }
     public void setNom(String nom) { this.nom = nom; }
     public String getPrenom() { return prenom; }

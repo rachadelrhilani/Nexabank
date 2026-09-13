@@ -1,0 +1,1 @@
+[13/09/2026 20:21:50] ID: 1 | Type: DEPOT | Montant: 2000 MAD | Source: 1001 | Dest: 1001

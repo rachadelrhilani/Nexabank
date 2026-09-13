@@ -36,7 +36,7 @@ class Main {
 
             Person utilisateurConnecte = null;
 
-            // Boucle d'authentification
+            // L'authentification
             while (utilisateurConnecte == null) {
                 System.out.print("Email : ");
                 String email = scanner.nextLine();
@@ -53,7 +53,7 @@ class Main {
             // Message de bienvenue polymorphe
             utilisateurConnecte.login();
 
-            // REDIRECTION AUTOMATIQUE SELON LE RÔLE
+            // redirection automatique
             if ("CLIENT".equals(utilisateurConnecte.getRole())) {
                 menuClient((Client) utilisateurConnecte);
             } else if ("GESTIONNAIRE".equals(utilisateurConnecte.getRole())) {
@@ -164,7 +164,7 @@ class Main {
     }
 
     // ==========================================
-    // ESPACE GESTIONNAIRE
+    // espace de gestionner
     // ==========================================
     private static void menuGestionnaire() {
         int choix = -1;
@@ -251,9 +251,7 @@ class Main {
         return null;
     }
 
-    // ==========================================
-    // UTILITAIRES
-    // ==========================================
+    
     private static Compte selectionnerCompte(Client client) {
         afficherSoldes(client);
         if (client.getComptes().isEmpty()) return null;
@@ -267,7 +265,7 @@ class Main {
         }
         return compte;
     }
-
+    // validation de type d'entre
     private static int lireEntier() {
         while (!scanner.hasNextInt()) {
             System.out.print("Saisie invalide. Entrez un nombre entier : ");

@@ -12,6 +12,7 @@ public class FileLogger {
 
     public static void enregistrerTransaction(int numeroCompte, Transaction transaction) throws JournalisationException {
         String nomFichier = "compte_" + numeroCompte + ".txt";
+        // écrire la date selon un modele
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 
         String ligneLog = String.format("[%s] ID: %d | Type: %s | Montant: %d MAD | Source: %d | Dest: %d%n",
@@ -22,7 +23,7 @@ public class FileLogger {
                 transaction.getCompteSource(),
                 transaction.getCompteDestination()
         );
-
+        
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(nomFichier, true))) {
             writer.write(ligneLog);
         } catch (IOException e) {

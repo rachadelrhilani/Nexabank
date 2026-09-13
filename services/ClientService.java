@@ -26,7 +26,7 @@ public class ClientService {
             throw new MontantInvalideException("Le montant du dépôt doit être strictement positif.");
         }
 
-        // 1. Contrôle Métier
+        // la verification
         if (compte instanceof Courant) {
             if (compte.getSolde() < 0) {
                 System.out.println("Compte à découvert : application de " + FRAIS_REGULARISATION + " MAD de frais.");
@@ -40,10 +40,10 @@ public class ClientService {
             }
         }
 
-        // 2. Modification mécanique du solde (Héritée de Compte)
+        // depot de l'argent apres la verification
         compte.depotArgent(montant);
 
-        // 3. Traçabilité
+        // la transaction et l'enregistrement dans un fichier text
         int numCompte = (int) compte.getNumeroCompte();
         Transaction tx = new Transaction(idTx, TypeTransaction.DEPOT, (int) montant, numCompte, numCompte);
         compte.ajouterTransaction(tx);
@@ -62,7 +62,7 @@ public class ClientService {
 
         float soldeActuel = compte.getSolde();
 
-        // 1. Contrôle Métier
+        // la verification
         if (compte instanceof Courant courant) {
             if (soldeActuel + courant.getDecouvertAutorise() < montant) {
                 throw new SoldeInsuffisantException(
@@ -77,10 +77,10 @@ public class ClientService {
             }
         }
 
-        // 2. Modification mécanique du solde (Héritée de Compte)
+        // retirer l'argent apres la verification
         compte.retraitArgent(montant);
 
-        // 3. Traçabilité
+        // la transaction et l'enregistrement dans un fichier text
         int numCompte = (int) compte.getNumeroCompte();
         Transaction tx = new Transaction(idTx, TypeTransaction.RETRAIT, (int) montant, numCompte, numCompte);
         compte.ajouterTransaction(tx);
@@ -89,7 +89,7 @@ public class ClientService {
 
     public void effectuerVirement(Compte source, Compte destination, float montant, int idTx) 
             throws MontantInvalideException, SoldeInsuffisantException, JournalisationException {
-        
+        // les exceptions
         if (source == null || destination == null) {
             throw new IllegalArgumentException("Comptes invalides.");
         }
@@ -97,10 +97,10 @@ public class ClientService {
             throw new MontantInvalideException("Virement impossible sur le même compte.");
         }
 
-        // Débit du compte source
+        // retrait le compte source
         effectuerRetrait(source, montant, idTx);
 
-        // Crédit du compte destination avec Rollback si la règle métier échoue
+        // 
         try {
             effectuerDepot(destination, montant, idTx);
         } catch (MontantInvalideException e) {
